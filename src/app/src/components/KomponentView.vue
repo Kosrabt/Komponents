@@ -12,6 +12,7 @@
           :currentKomponent="currentKomponent"
           @componentChanged="onComponentChanged"
           @componentSelected="onComponentSelected"
+          @click="onClick"
         ></Workspace>
       </div>
     </div>
@@ -37,7 +38,8 @@ import { Point } from "@/models/Network/Point";
 
 const Actions: any = {
   Move: "Move",
-  AddEdge: "Add Edge"
+  AddEdge: "Add Edge",
+  AddNode: "Add Node"
 };
 
 @Component({
@@ -80,6 +82,15 @@ export default class KomponentView extends Vue {
     this.selection.selectedComponent = newKomponent;
   }
 
+  protected onClick(position: any) {
+    if (position && this.action == Actions.AddNode) {
+      var newKomponent = this.GetRandomKomponent();
+      newKomponent.Position = new Point(position.x, position.y);
+      this.currentKomponent.SubKomponents.push(newKomponent);
+      this.ResetAction();
+    }
+  }
+
   protected onKeyPressed(event: any): void {
     var keyCode = event.code;
     switch (keyCode) {
@@ -89,6 +100,10 @@ export default class KomponentView extends Vue {
 
       case "KeyE":
         this.action = Actions.AddEdge;
+        break;
+
+      case "KeyN":
+        this.action = Actions.AddNode;
         break;
 
       default:
@@ -117,8 +132,7 @@ export default class KomponentView extends Vue {
 
   //Operations
   protected addNewComponent(): void {
-    var newKomponent = this.GetRandomKomponent();
-    this.currentKomponent.SubKomponents.push(newKomponent);
+    this.action = Actions.AddNode;
   }
 
   protected handleSelectActions(komponent: Komponent | undefined): void {

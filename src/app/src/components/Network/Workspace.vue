@@ -6,7 +6,7 @@
       :nodes="network.nodes"
       :edges="network.edges"
       :options="network.options"
-      @click="networkEvent('click')"
+      @click="onClick"
       @double-click="networkEvent('doubleClick')"
       @oncontext="networkEvent('oncontext')"
       @hold="networkEvent('hold')"
@@ -88,6 +88,11 @@ export default {
       }     
       this.notifyNodeSelected(component);
     },   
+    onClick(event)
+    {
+      var point = event.pointer.canvas;
+      this.$emit("click",point);
+    },
     findComponentById(nodeId) {
       return this.currentKomponent.SubKomponents.find(element => element.Id === nodeId);
     },
