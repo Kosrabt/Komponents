@@ -12,9 +12,9 @@
       @hold="networkEvent('hold')"
       @release="networkEvent('release')"
       @select="networkEvent('select')"
-      @select-node="networkEvent('selectNode')"
+      @select-node="onSelectionChanged"
       @select-edge="networkEvent('selectEdge')"
-      @deselect-node="networkEvent('deselectNode')"
+      @deselect-node="onSelectionChanged"
       @deselect-edge="networkEvent('deselectEdge')"
       @drag-start="networkEvent('dragStart')"
       @dragging="networkEvent('dragging')"
@@ -78,12 +78,30 @@ export default {
         }
       }
     },
+    onSelectionChanged(event)
+    {        
+      var component = undefined;
+      if (event.nodes.length>0)
+      {
+        var nodeId = event.nodes[0];
+         component = this.findComponentById(nodeId);        
+      }     
+      this.notifyNodeSelected(component);
+    },   
     findComponentById(nodeId) {
       return this.currentKomponent.SubKomponents.find(element => element.Id === nodeId);
     },
     notifyChange(component)
     {
       this.$emit("componentChanged", component);
+    },
+    notifyNodeSelected(component)
+    {
+       this.$emit("componentSelected", component);
+    },
+    unselectAll()
+    {
+      this.$refs.network.unselectAll();
     },
     computeNetwork() {
       var nodes = [];
