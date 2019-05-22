@@ -18,4 +18,10 @@ export class Komponent {
         this.ParentId = parentId;
         this.Name = name;
     }
+
+    public OverrideMeta(source:Komponent): void
+    {
+        this.Name = source.Name;
+        this.Position = source.Position;
+    }
 }

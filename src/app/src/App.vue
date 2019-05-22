@@ -1,12 +1,7 @@
 
 <template>
   <div id="app">
-    <div id="main">
-      <title-bar/>
-      <main-content>
-        <router-view></router-view>
-      </main-content>
-    </div>
+    <router-view></router-view>
   </div>
 </template>
 
@@ -16,10 +11,6 @@ import MainContent from "./components/MainContent.vue";
 
 export default {
   name: "app",
-  components: {
-    TitleBar,
-    MainContent,
-  }
 };
 </script>
 

@@ -3,12 +3,7 @@
     <div class="workspace">
       <div class="workspace-header">Components</div>
       <div class="workspace-content">
-       <SidebarComponent><router-link to="/">Home</router-link></SidebarComponent>
-       <SidebarComponent><router-link to="/about">About</router-link></SidebarComponent>
-      </div>
-      <div class="workspace-footer">
-        <div class="title">Add component</div>
-        <div class="icon">+</div>
+        <slot></slot>       
       </div>
     </div>
   </div>
@@ -16,10 +11,9 @@
 
 <script lang="ts">
 import { Component, Prop, Vue } from "vue-property-decorator";
-import SidebarComponent from './SidebarComponent.vue';
+
 @Component({
-  components: {
-    SidebarComponent,
+  components: {  
   },
 })
 export default class Sidebar extends Vue {}
@@ -44,18 +38,7 @@ export default class Sidebar extends Vue {}
     }
     .workspace-content {
       flex: 1;
-    }
-    .workspace-footer {
-      padding: 20px;
-      background-color: #2e2e2e;
-      display: flex;
-
-      .icon {
-        display: block;
-        margin-left: auto;
-        margin-right: 24px;
-      }
-    }
+    }  
   }
 }
 </style>
