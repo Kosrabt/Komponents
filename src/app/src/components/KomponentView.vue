@@ -10,13 +10,19 @@
       @componentChanged="onComponentChanged"
       ></Workspace>
     </div>
-    <div class="action-button add-button" @click="addNewComponent">+</div>
+    <fab
+      :position="fabConfig.position"
+      :bg-color="fabConfig.bgColor"
+      :actions="fabConfig.fabActions"
+      @addComponent="addNewComponent"  
+    ></fab>
   </div>
 </template>
 
 <script lang="ts">
 import { Component, Prop, Vue } from "vue-property-decorator";
 
+import fab from 'vue-fab'
 import Workspace from "../components/Network/Workspace.vue";
 import Sidebar from "@/components/Sidebar/Sidebar.vue";
 import SidebarButton from "@/components/Sidebar/SidebarButton.vue";
@@ -28,12 +34,11 @@ import { Point } from "@/models/Network/Point";
   components: {
     Workspace,
     SidebarButton,
-    Sidebar
+    Sidebar,
+    fab
   }
 })
 export default class KomponentView extends Vue {
-  
-  
   currentKomponent: Komponent;
 
   private idIndex: number =0;
@@ -63,6 +68,25 @@ export default class KomponentView extends Vue {
     return this.currentKomponent.SubKomponents.find(c => c.Id == id);
   }
   
+get fabConfig(): any
+{
+  return {
+    position: "absolute",
+    bgColor: "#45A29E",
+    fabActions:[
+              {
+                  name: 'addComponent',
+                  icon: 'plus_one',
+                  tooltip:'Add new Komponent'
+              },
+              {
+                  name: 'addOther',
+                  icon: 'add_alert'
+              }
+          ]
+  }
+}
+
   //For testing
   protected SelectFirst(): void
   {
