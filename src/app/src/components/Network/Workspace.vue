@@ -64,7 +64,22 @@ export default {
       return this.computeNetwork();
     }
   },
+  mounted() {
+    this.$store.state.bus.$on('save', this.save)
+  },
   methods: {
+    save() {
+      const jsonString = JSON.stringify(this.network, null, 2)
+      const blob = new Blob([jsonString], { type: 'application/json' })
+      const a = document.createElement('a')
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.href = window.URL.createObjectURL(blob)
+      a.setAttribute('download', 'Komponent.json');
+      a.click();
+      window.URL.revokeObjectURL(a.href)
+      document.body.removeChild(a)
+    },
     networkEvent(eventName) {},
     onDragEnd(event) {     
       var nodes = event.nodes;

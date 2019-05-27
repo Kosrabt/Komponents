@@ -1,18 +1,32 @@
 <template>
     <div class="title-bar">    
       <img alt="Komponents" src="../assets/logo.png">
+      <span class="menu" @click="save()" v-text="'Save \u21E9'" />
+      <span class="menu" @click="load()" v-text="'Load \u21E7'" />
     </div>
 </template>
 
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator';
 
-@Component
-export default class TitleBar extends Vue {
+export default {
+  methods: {
+    save() {
+      this.$store.state.bus.$emit('save')
+    },
+    load() {
+      alert('Load is not implemented yet.')
+    }
+  }
 }
 </script>
 
 <style lang="scss">
+.menu {
+  cursor: pointer;
+  margin: 0 1em;
+}
+
 .title-bar {
     height: 48px;
     align-items: center;
