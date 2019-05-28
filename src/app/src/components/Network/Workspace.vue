@@ -57,20 +57,20 @@ export default {
     Network
   },
   props: {
-    currentKomponent: {}
+    currentComponent: {}
   },
   computed: {
-    network() {
+    network() {     
       return this.computeNetwork();
     }
   },
   methods: {
     networkEvent(eventName) {},
-    onDragEnd(event) {     
-      var nodes = event.nodes;
-      var positions = this.$refs.network.getPositions(nodes);
+    onDragEnd(event) {
+      const nodes = event.nodes;
+      const positions = this.$refs.network.getPositions(nodes);
       for (let [key, value] of Object.entries(positions)) {
-        var component = this.findComponentById(key);
+        let component = this.findComponentById(key);
         if (component) {
           component.Position.X = value.x;
           component.Position.Y = value.y;
@@ -78,41 +78,37 @@ export default {
         }
       }
     },
-    onSelectionChanged(event)
-    {        
-      var component = undefined;
-      if (event.nodes.length>0)
-      {
+    onSelectionChanged(event) {
+      let component = undefined;
+      if (event.nodes.length > 0) {
         var nodeId = event.nodes[0];
-         component = this.findComponentById(nodeId);        
-      }     
+        component = this.findComponentById(nodeId);
+      }
       this.notifyNodeSelected(component);
-    },   
-    onClick(event)
-    {
-      var point = event.pointer.canvas;
-      this.$emit("click",point);
+    },
+    onClick(event) {
+      const point = event.pointer.canvas;
+      this.$emit("click", point);
     },
     findComponentById(nodeId) {
-      return this.currentKomponent.SubKomponents.find(element => element.Id === nodeId);
+      return this.currentComponent.SubComponents.find(
+        element => element.Id === nodeId
+      );
     },
-    notifyChange(component)
-    {
+    notifyChange(component) {
       this.$emit("componentChanged", component);
     },
-    notifyNodeSelected(component)
-    {
-       this.$emit("componentSelected", component);
+    notifyNodeSelected(component) {
+      this.$emit("componentSelected", component);
     },
-    unselectAll()
-    {
+    unselectAll() {
       this.$refs.network.unselectAll();
     },
     computeNetwork() {
       var nodes = [];
       var edges = [];
 
-      this.currentKomponent.SubKomponents.forEach(component => {
+      this.currentComponent.SubComponents.forEach(component => {
         var node = {
           id: component.Id,
           label: component.Name,

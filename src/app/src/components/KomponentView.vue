@@ -1,5 +1,5 @@
 <template>
-  <div class="komponent-view">
+  <div class="Component-view">
     <Sidebar>
       <SidebarButton @click="SelectFirst">Component 1</SidebarButton>
       <SidebarButton @click="SelectSecond">Component 2</SidebarButton>
@@ -9,7 +9,7 @@
       <div class="workspace">
         <Workspace
           ref="workspace"
-          :currentKomponent="currentKomponent"
+          :currentComponent="currentComponent"
           @componentChanged="onComponentChanged"
           @componentSelected="onComponentSelected"
           @click="onClick"
@@ -26,13 +26,13 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from "vue-property-decorator";
+import { Component as VueComponent, Prop, Vue } from "vue-property-decorator";
 
 import fab from "vue-fab";
 import Workspace from "../components/Network/Workspace.vue";
 import Sidebar from "@/components/Sidebar/Sidebar.vue";
 import SidebarButton from "@/components/Sidebar/SidebarButton.vue";
-import { Komponent } from "@/models/Network/Komponent";
+import { Component } from "@/models/Network/Component";
 import { Link } from "@/models/Network/Link";
 import { Point } from "@/models/Network/Point";
 
@@ -42,7 +42,7 @@ const Actions: any = {
   AddNode: "Add Node"
 };
 
-@Component({
+@VueComponent({
   components: {
     Workspace,
     SidebarButton,
@@ -50,8 +50,8 @@ const Actions: any = {
     fab
   }
 })
-export default class KomponentView extends Vue {
-  currentKomponent: Komponent;
+export default class ComponentView extends Vue {
+  currentComponent: Component;
   action: string = Actions.Move;
   selection: any = {
     selectedComponent: undefined
@@ -60,33 +60,36 @@ export default class KomponentView extends Vue {
   private idIndex: number = 0;
   constructor() {
     super();
-    this.currentKomponent = this.GetBaseData();
+    this.currentComponent = this.GetBaseData();
   }
 
   protected created() {
     window.addEventListener("keyup", this.onKeyPressed);
   }
 
-  protected onComponentChanged(komponent: Komponent) {
-    let targetKomponent = this.GetKomponentById(komponent.Id);
-    if (targetKomponent) {
-      targetKomponent.OverrideMeta(komponent);
+  protected onComponentChanged(Component: Component) {
+    let targetComponent = this.GetComponentById(Component.Id);
+    if (targetComponent) {
+      targetComponent.OverrideMeta(Component);
     }
   }
 
-  protected onComponentSelected(komponent: Komponent) {
-    if (!komponent) this.UnselectAll();
-
-    var newKomponent = this.GetKomponentById(komponent.Id);
-    this.handleSelectActions(newKomponent);
-    this.selection.selectedComponent = newKomponent;
+  protected onComponentSelected(Component: Component) {
+    if (!Component) 
+    {
+      this.UnselectAll();
+      return;
+    }
+    var newComponent = this.GetComponentById(Component.Id);
+    this.handleSelectActions(newComponent);
+    this.selection.selectedComponent = newComponent;
   }
 
   protected onClick(position: any) {
     if (position && this.action == Actions.AddNode) {
-      var newKomponent = this.GetRandomKomponent();
-      newKomponent.Position = new Point(position.x, position.y);
-      this.currentKomponent.SubKomponents.push(newKomponent);
+      var newComponent = this.GetRandomComponent();
+      newComponent.Position = new Point(position.x, position.y);
+      this.currentComponent.SubComponents.push(newComponent);
       this.ResetAction();
     }
   }
@@ -135,25 +138,25 @@ export default class KomponentView extends Vue {
     this.action = Actions.AddNode;
   }
 
-  protected handleSelectActions(komponent: Komponent | undefined): void {
+  protected handleSelectActions(Component: Component | undefined): void {
     if (
       this.action === Actions.AddEdge &&
       this.selection.selectedComponent &&
-      komponent
+      Component
     ) {
-      this.AddLink(this.selection.selectedComponent, komponent);
+      this.AddLink(this.selection.selectedComponent, Component);
       this.ResetAction();
     }
   }
 
-  protected AddLink(from: Komponent, to: Komponent) {
+  protected AddLink(from: Component, to: Component) {
     var id = from.Id + "-" + to.Id;
     var newLink = new Link(id, "Link_" + id, to);
     from.Links.push(newLink);
   }
 
-  private GetKomponentById(id: string): Komponent | undefined {
-    return this.currentKomponent.SubKomponents.find(c => c.Id == id);
+  private GetComponentById(id: string): Component | undefined {
+    return this.currentComponent.SubComponents.find(c => c.Id == id);
   }
 
   get fabConfig(): any {
@@ -164,7 +167,7 @@ export default class KomponentView extends Vue {
         {
           name: "addComponent",
           icon: "plus_one",
-          tooltip: "Add new Komponent"
+          tooltip: "Add new Component"
         },
         {
           name: "addOther",
@@ -176,52 +179,52 @@ export default class KomponentView extends Vue {
 
   //For testing
   protected SelectFirst(): void {
-    this.currentKomponent = this.GetBaseData();
+    this.currentComponent = this.GetBaseData();
   }
 
   protected SelectSecond(): void {
-    this.currentKomponent = this.GetBaseData2();
+    this.currentComponent = this.GetBaseData2();
   }
 
-  private GetRandomKomponent(): Komponent {
+  private GetRandomComponent(): Component {
     var newId = (this.idIndex++).toString();
-    return new Komponent(newId, this.currentKomponent.Id, "Name" + newId);
+    return new Component(newId, this.currentComponent.Id, "Name" + newId);
   }
 
-  private GetBaseData(): Komponent {
-    var k1 = new Komponent("k1", "root", "Name1");
-    var k2 = new Komponent("k2", "root", "Name2");
+  private GetBaseData(): Component {
+    var k1 = new Component("k1", "root", "Name1");
+    var k2 = new Component("k2", "root", "Name2");
     var link = new Link("k1-k2", "Link", k2);
     k1.Links.push(link);
 
     k1.Position = new Point(100, 0);
     k2.Position = new Point(-100, 0);
 
-    var komponent = new Komponent("root", "", "Root");
-    komponent.Position = new Point(0, 0);
-    komponent.SubKomponents.push(k1, k2);
-    return komponent;
+    var newComponent = new Component("root", "", "Root");
+    newComponent.Position = new Point(0, 0);
+    newComponent.SubComponents.push(k1, k2);
+    return newComponent;
   }
 
-  private GetBaseData2(): Komponent {
-    var k1 = new Komponent("k1", "root", "Name3");
-    var k2 = new Komponent("k2", "root", "Name4");
+  private GetBaseData2(): Component {
+    var k1 = new Component("k1", "root", "Name3");
+    var k2 = new Component("k2", "root", "Name4");
     var link = new Link("k1-k2", "Link", k2);
     k1.Links.push(link);
 
     k1.Position = new Point(100, 0);
     k2.Position = new Point(-100, 0);
 
-    var komponent = new Komponent("root", "", "Root");
-    komponent.Position = new Point(0, 0);
-    komponent.SubKomponents.push(k1, k2);
-    return komponent;
+    var newComponent = new Component("root", "", "Root");
+    newComponent.Position = new Point(0, 0);
+    newComponent.SubComponents.push(k1, k2);
+    return newComponent;
   }
 }
 </script>
 
 <style lang="scss" scoped>
-.komponent-view {
+.Component-view {
   display: flex;
   flex: 1;
   position: relative;
