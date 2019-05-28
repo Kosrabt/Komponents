@@ -17,9 +17,4 @@ export class Component {
         this.ParentId = parentId;
         this.Name = name;
     }
-
-    public OverrideMeta(source: Component): void {
-        this.Name = source.Name;
-        this.Position = source.Position;
-    }
 }

@@ -2,6 +2,6 @@ import { Component } from './Network/Component';
 
 export class RootStateModel
 {
-    public Components: Component[] = [];
+    public Component?: Component;
     public SelectedComponent? : Component;
 }

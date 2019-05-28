@@ -1,8 +1,8 @@
 <template>
   <div class="Component-view">
     <Sidebar>
-      <SidebarButton @click="SelectFirst">Component 1</SidebarButton>
-      <SidebarButton @click="SelectSecond">Component 2</SidebarButton>
+      <SidebarButton >Component 1</SidebarButton>
+      <SidebarButton >Component 2</SidebarButton>
     </Sidebar>
     <div class="workspace-wrapper">
       <div class="messages">{{debugMessages}}</div>
@@ -35,6 +35,13 @@ import SidebarButton from "@/components/Sidebar/SidebarButton.vue";
 import { Component } from "@/models/Network/Component";
 import { Link } from "@/models/Network/Link";
 import { Point } from "@/models/Network/Point";
+import {
+  State,
+  Getter,
+  Action,
+  Mutation,
+  namespace
+} from 'vuex-class'
 
 const Actions: any = {
   Move: "Move",
@@ -51,27 +58,30 @@ const Actions: any = {
   }
 })
 export default class ComponentView extends Vue {
-  currentComponent: Component;
+
+  @State(root => root.SelectedComponent) currentComponent: Component
+
   action: string = Actions.Move;
   selection: any = {
     selectedComponent: undefined
   };
+  
+  @Action LoadData
+  @Mutation ComponentPositionChanged
 
   private idIndex: number = 0;
   constructor() {
     super();
-    this.currentComponent = this.GetBaseData();
   }
 
   protected created() {
     window.addEventListener("keyup", this.onKeyPressed);
+    this.LoadData();
+
   }
 
-  protected onComponentChanged(Component: Component) {
-    let targetComponent = this.GetComponentById(Component.Id);
-    if (targetComponent) {
-      targetComponent.OverrideMeta(Component);
-    }
+  protected onComponentChanged(component: Component) {
+    this.ComponentPositionChanged({id: component.Id, position: component.Position});
   }
 
   protected onComponentSelected(Component: Component) {
@@ -168,57 +178,14 @@ export default class ComponentView extends Vue {
           name: "addComponent",
           icon: "plus_one",
           tooltip: "Add new Component"
-        },
-        {
-          name: "addOther",
-          icon: "add_alert"
-        }
+        }       
       ]
     };
-  }
-
-  //For testing
-  protected SelectFirst(): void {
-    this.currentComponent = this.GetBaseData();
-  }
-
-  protected SelectSecond(): void {
-    this.currentComponent = this.GetBaseData2();
   }
 
   private GetRandomComponent(): Component {
     var newId = (this.idIndex++).toString();
     return new Component(newId, this.currentComponent.Id, "Name" + newId);
-  }
-
-  private GetBaseData(): Component {
-    var k1 = new Component("k1", "root", "Name1");
-    var k2 = new Component("k2", "root", "Name2");
-    var link = new Link("k1-k2", "Link", k2);
-    k1.Links.push(link);
-
-    k1.Position = new Point(100, 0);
-    k2.Position = new Point(-100, 0);
-
-    var newComponent = new Component("root", "", "Root");
-    newComponent.Position = new Point(0, 0);
-    newComponent.SubComponents.push(k1, k2);
-    return newComponent;
-  }
-
-  private GetBaseData2(): Component {
-    var k1 = new Component("k1", "root", "Name3");
-    var k2 = new Component("k2", "root", "Name4");
-    var link = new Link("k1-k2", "Link", k2);
-    k1.Links.push(link);
-
-    k1.Position = new Point(100, 0);
-    k2.Position = new Point(-100, 0);
-
-    var newComponent = new Component("root", "", "Root");
-    newComponent.Position = new Point(0, 0);
-    newComponent.SubComponents.push(k1, k2);
-    return newComponent;
   }
 }
 </script>
