@@ -1,15 +1,15 @@
 <template>
   <div class="Component-view">
     <Sidebar>
-      <SidebarButton >Component 1</SidebarButton>
-      <SidebarButton >Component 2</SidebarButton>
+      <SidebarButton>Component 1</SidebarButton>
+      <SidebarButton>Component 2</SidebarButton>
     </Sidebar>
     <div class="workspace-wrapper">
       <div class="messages">{{debugMessages}}</div>
       <div class="workspace">
         <Workspace
           ref="workspace"
-          :currentComponent="currentComponent"
+          :currentComponent="SelectedComponent"
           @componentChanged="onComponentChanged"
           @componentSelected="onComponentSelected"
           @click="onClick"
@@ -35,13 +35,8 @@ import SidebarButton from "@/components/Sidebar/SidebarButton.vue";
 import { Component } from "@/models/Network/Component";
 import { Link } from "@/models/Network/Link";
 import { Point } from "@/models/Network/Point";
-import {
-  State,
-  Getter,
-  Action,
-  Mutation,
-  namespace
-} from 'vuex-class'
+import { State, Getter, Action, Mutation, namespace } from "vuex-class";
+import { ComponentOptions } from 'vue';
 
 const Actions: any = {
   Move: "Move",
@@ -58,16 +53,18 @@ const Actions: any = {
   }
 })
 export default class ComponentView extends Vue {
-
-  @State(root => root.SelectedComponent) currentComponent: Component
+ 
 
   action: string = Actions.Move;
   selection: any = {
     selectedComponent: undefined
   };
-  
-  @Action LoadData
-  @Mutation ComponentPositionChanged
+
+  @Getter SelectedComponent;
+  @Action LoadData;
+  @Mutation ComponentPositionChanged;
+  @Mutation AddNewComponent;
+  @Mutation AddNewLinkToComponent;
 
   private idIndex: number = 0;
   constructor() {
@@ -77,31 +74,27 @@ export default class ComponentView extends Vue {
   protected created() {
     window.addEventListener("keyup", this.onKeyPressed);
     this.LoadData();
-
   }
 
   protected onComponentChanged(component: Component) {
-    this.ComponentPositionChanged({id: component.Id, position: component.Position});
+    this.ComponentPositionChanged({
+      id: component.Id,
+      position: component.Position
+    });
   }
 
   protected onComponentSelected(Component: Component) {
-    if (!Component) 
-    {
+    if (!Component) {
       this.UnselectAll();
       return;
     }
     var newComponent = this.GetComponentById(Component.Id);
-    this.handleSelectActions(newComponent);
+    this.HandleSelectActions(newComponent);
     this.selection.selectedComponent = newComponent;
   }
 
   protected onClick(position: any) {
-    if (position && this.action == Actions.AddNode) {
-      var newComponent = this.GetRandomComponent();
-      newComponent.Position = new Point(position.x, position.y);
-      this.currentComponent.SubComponents.push(newComponent);
-      this.ResetAction();
-    }
+    this.HandleAddNewComponent(position);
   }
 
   protected onKeyPressed(event: any): void {
@@ -148,7 +141,7 @@ export default class ComponentView extends Vue {
     this.action = Actions.AddNode;
   }
 
-  protected handleSelectActions(Component: Component | undefined): void {
+  protected HandleSelectActions(Component: Component | undefined): void {
     if (
       this.action === Actions.AddEdge &&
       this.selection.selectedComponent &&
@@ -162,11 +155,21 @@ export default class ComponentView extends Vue {
   protected AddLink(from: Component, to: Component) {
     var id = from.Id + "-" + to.Id;
     var newLink = new Link(id, "Link_" + id, to.Id);
-    from.Links.push(newLink);
+    this.AddNewLinkToComponent({id: from.Id, link: newLink});  
+  }
+
+  private HandleAddNewComponent(position: any)
+  {
+    if (position && this.action == Actions.AddNode) {
+      var newComponent = this.GetRandomComponent();
+      newComponent.Position = new Point(position.x, position.y);
+      this.AddNewComponent(newComponent);
+      this.ResetAction();
+    }
   }
 
   private GetComponentById(id: string): Component | undefined {
-    return this.currentComponent.SubComponents.find(c => c.Id == id);
+    return this.SelectedComponent.SubComponents.find(c => c.Id == id);
   }
 
   get fabConfig(): any {
@@ -178,14 +181,14 @@ export default class ComponentView extends Vue {
           name: "addComponent",
           icon: "plus_one",
           tooltip: "Add new Component"
-        }       
+        }
       ]
     };
   }
 
   private GetRandomComponent(): Component {
     var newId = (this.idIndex++).toString();
-    return new Component(newId, this.currentComponent.Id, "Name" + newId);
+    return new Component(newId, this.SelectedComponent.Id, "Name" + newId);
   }
 }
 </script>

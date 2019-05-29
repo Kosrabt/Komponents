@@ -9,13 +9,23 @@ Vue.use(Vuex);
 
 export default new Vuex.Store<RootStateModel>({
   state: new RootStateModel(),
+  getters:
+  {
+    SelectedComponent: state => 
+    {      
+      if (state.Component && state.SelectedComponentId)
+      {
+       return FindChild(state.Component, state.SelectedComponentId)
+      }
+    }
+  },
   mutations: {
     LoadComponent(state, rootComponent) {
       state.Component = rootComponent;
-      state.SelectedComponent = state.Component;
+      state.SelectedComponentId = rootComponent.Id;
     },
     SelectComponent(state, selectedComponent) {
-      state.SelectedComponent = selectedComponent;
+      state.SelectedComponentId = selectedComponent.Id;
     },
     ComponentPositionChanged(state, payload)
     {
@@ -28,6 +38,28 @@ export default new Vuex.Store<RootStateModel>({
         }
       }
     },
+    AddNewComponent(state, component)
+    {     
+      if (state.Component && state.SelectedComponentId)
+      {
+        var target = FindChild(state.Component, state.SelectedComponentId);
+        if (target)
+        {
+          target.SubComponents.push(component);
+        }
+      }
+    },
+    AddNewLinkToComponent(state, payload)
+    {
+      if (state.Component)
+      {
+        let target = FindChild(state.Component, payload.id);
+        if (target)
+        {          
+          target.Links.push(payload.link);
+        }
+      }
+    }
   },
   actions: {
     LoadData(context) {
