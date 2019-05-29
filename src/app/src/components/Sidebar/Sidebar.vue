@@ -10,9 +10,9 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from "vue-property-decorator";
+import { Component as VueComponent, Prop, Vue } from "vue-property-decorator";
 
-@Component({
+@VueComponent({
   components: {  
   },
 })

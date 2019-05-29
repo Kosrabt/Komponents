@@ -1,18 +1,19 @@
 <template>
-  <div class="komponent-view">
+  <div class="Component-view">
     <Sidebar>
-      <SidebarButton @click="SelectFirst">Component 1</SidebarButton>
-      <SidebarButton @click="SelectSecond">Component 2</SidebarButton>
+      <SidebarButton>Component 1</SidebarButton>
+      <SidebarButton>Component 2</SidebarButton>
     </Sidebar>
     <div class="workspace-wrapper">
       <div class="messages">{{debugMessages}}</div>
       <div class="workspace">
         <Workspace
           ref="workspace"
-          :currentKomponent="currentKomponent"
+          :currentComponent="SelectedComponent"
           @componentChanged="onComponentChanged"
           @componentSelected="onComponentSelected"
           @click="onClick"
+          @doubleClick="onDoubleClick"
         ></Workspace>
       </div>
     </div>
@@ -26,15 +27,17 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from "vue-property-decorator";
+import { Component as VueComponent, Prop, Vue } from "vue-property-decorator";
 
 import fab from "vue-fab";
 import Workspace from "../components/Network/Workspace.vue";
 import Sidebar from "@/components/Sidebar/Sidebar.vue";
 import SidebarButton from "@/components/Sidebar/SidebarButton.vue";
-import { Komponent } from "@/models/Network/Komponent";
+import { Component } from "@/models/Network/Component";
 import { Link } from "@/models/Network/Link";
 import { Point } from "@/models/Network/Point";
+import { ComponentOptions } from "vue";
+import { vxm } from "@/store";
 
 const Actions: any = {
   Move: "Move",
@@ -42,7 +45,7 @@ const Actions: any = {
   AddNode: "Add Node"
 };
 
-@Component({
+@VueComponent({
   components: {
     Workspace,
     SidebarButton,
@@ -50,45 +53,51 @@ const Actions: any = {
     fab
   }
 })
-export default class KomponentView extends Vue {
-  currentKomponent: Komponent;
+export default class ComponentView extends Vue {
   action: string = Actions.Move;
   selection: any = {
     selectedComponent: undefined
   };
 
+
+
   private idIndex: number = 0;
   constructor() {
     super();
-    this.currentKomponent = this.GetBaseData();
   }
 
   protected created() {
     window.addEventListener("keyup", this.onKeyPressed);
   }
 
-  protected onComponentChanged(komponent: Komponent) {
-    let targetKomponent = this.GetKomponentById(komponent.Id);
-    if (targetKomponent) {
-      targetKomponent.OverrideMeta(komponent);
-    }
+  get SelectedComponent()
+  {
+    return vxm.network.SelectedComponent;
   }
 
-  protected onComponentSelected(komponent: Komponent) {
-    if (!komponent) this.UnselectAll();
+  protected onComponentChanged(component: Component) {
+    vxm.network.ComponentPositionChanged({
+      ComponentId: component.Id,
+      Position: component.Position
+    });
+  }
 
-    var newKomponent = this.GetKomponentById(komponent.Id);
-    this.handleSelectActions(newKomponent);
-    this.selection.selectedComponent = newKomponent;
+  protected onComponentSelected(Component: Component) {
+    if (!Component) {
+      this.UnselectAll();
+      return;
+    }
+    var newComponent = this.GetComponentById(Component.Id);
+    this.HandleSelectActions(newComponent);
+    this.selection.selectedComponent = newComponent;
   }
 
   protected onClick(position: any) {
-    if (position && this.action == Actions.AddNode) {
-      var newKomponent = this.GetRandomKomponent();
-      newKomponent.Position = new Point(position.x, position.y);
-      this.currentKomponent.SubKomponents.push(newKomponent);
-      this.ResetAction();
-    }
+    this.HandleAddNewComponent(position);
+  }
+
+  protected onDoubleClick(componentId: string) {
+    vxm.network.SelectComponent(componentId);
   }
 
   protected onKeyPressed(event: any): void {
@@ -135,25 +144,38 @@ export default class KomponentView extends Vue {
     this.action = Actions.AddNode;
   }
 
-  protected handleSelectActions(komponent: Komponent | undefined): void {
+  protected HandleSelectActions(Component: Component | undefined): void {
     if (
       this.action === Actions.AddEdge &&
       this.selection.selectedComponent &&
-      komponent
+      Component
     ) {
-      this.AddLink(this.selection.selectedComponent, komponent);
+      this.AddLink(this.selection.selectedComponent, Component);
       this.ResetAction();
     }
   }
 
-  protected AddLink(from: Komponent, to: Komponent) {
+  protected AddLink(from: Component, to: Component) {
     var id = from.Id + "-" + to.Id;
-    var newLink = new Link(id, "Link_" + id, to);
-    from.Links.push(newLink);
+    var newLink = new Link(id, "Link_" + id, to.Id);
+    vxm.network.AddNewLink({ ComponentId: from.Id, NewLink: newLink });
   }
 
-  private GetKomponentById(id: string): Komponent | undefined {
-    return this.currentKomponent.SubKomponents.find(c => c.Id == id);
+  private HandleAddNewComponent(position: any) {
+    if (position && this.action == Actions.AddNode) {
+      var newComponent = this.GetRandomComponent();
+      if (!!newComponent) {
+        newComponent.Position = new Point(position.x, position.y);
+        vxm.network.AddNewComponent(newComponent);
+        this.ResetAction();
+      }
+    }
+  }
+
+  private GetComponentById(id: string): Component | undefined {
+    if (!vxm.network.SelectedComponent) return undefined;
+
+    return vxm.network.SelectedComponent.SubComponents.find(c => c.Id == id);
   }
 
   get fabConfig(): any {
@@ -164,64 +186,27 @@ export default class KomponentView extends Vue {
         {
           name: "addComponent",
           icon: "plus_one",
-          tooltip: "Add new Komponent"
-        },
-        {
-          name: "addOther",
-          icon: "add_alert"
+          tooltip: "Add new Component"
         }
       ]
     };
   }
 
-  //For testing
-  protected SelectFirst(): void {
-    this.currentKomponent = this.GetBaseData();
-  }
+  private GetRandomComponent(): Component | undefined {
+    if (!vxm.network.SelectedComponent) return undefined;
 
-  protected SelectSecond(): void {
-    this.currentKomponent = this.GetBaseData2();
-  }
-
-  private GetRandomKomponent(): Komponent {
     var newId = (this.idIndex++).toString();
-    return new Komponent(newId, this.currentKomponent.Id, "Name" + newId);
-  }
-
-  private GetBaseData(): Komponent {
-    var k1 = new Komponent("k1", "root", "Name1");
-    var k2 = new Komponent("k2", "root", "Name2");
-    var link = new Link("k1-k2", "Link", k2);
-    k1.Links.push(link);
-
-    k1.Position = new Point(100, 0);
-    k2.Position = new Point(-100, 0);
-
-    var komponent = new Komponent("root", "", "Root");
-    komponent.Position = new Point(0, 0);
-    komponent.SubKomponents.push(k1, k2);
-    return komponent;
-  }
-
-  private GetBaseData2(): Komponent {
-    var k1 = new Komponent("k1", "root", "Name3");
-    var k2 = new Komponent("k2", "root", "Name4");
-    var link = new Link("k1-k2", "Link", k2);
-    k1.Links.push(link);
-
-    k1.Position = new Point(100, 0);
-    k2.Position = new Point(-100, 0);
-
-    var komponent = new Komponent("root", "", "Root");
-    komponent.Position = new Point(0, 0);
-    komponent.SubKomponents.push(k1, k2);
-    return komponent;
+    return new Component(
+      newId,
+      vxm.network.SelectedComponent.Id,
+      "Name" + newId
+    );
   }
 }
 </script>
 
 <style lang="scss" scoped>
-.komponent-view {
+.Component-view {
   display: flex;
   flex: 1;
   position: relative;
