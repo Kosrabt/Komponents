@@ -13,17 +13,16 @@ interface ComponentPositionChangedRequest {
 
 interface AddNewLinkRequest {
     ComponentId: string,
-    Link: Link
+    NewLink: Link
 }
 
 
-export function FindComponent(rootComponent: Component, componentId: string): Component | undefined {
-    if (rootComponent.Id === componentId)
-        return rootComponent;
+export function FindComponent(component: Component, lookupId: string): Component | undefined {
+    if (component.Id === lookupId)
+        return component; 
 
-    return rootComponent.SubComponents.find(elm => FindComponent(elm, componentId) !== undefined);
+    return component.SubComponents.map(elm => FindComponent(elm, lookupId)).find(elm => elm != undefined);
 }
-
 
 @Module({ namespacedPath: "network/" })
 export class NetworkStore extends VuexModule {
@@ -66,10 +65,10 @@ export class NetworkStore extends VuexModule {
         }
     }
 
-    @mutation AddNewLink({ ComponentId, Link }: AddNewLinkRequest) {
+    @mutation AddNewLink({ ComponentId, NewLink }: AddNewLinkRequest) {
         let selectedComponent = FindComponent(this.component, ComponentId);
-        if (!!selectedComponent) {           
-            selectedComponent.Links.push(Link);
+        if (!!selectedComponent) { 
+            selectedComponent.Links.push(NewLink);
         }
     }
 }
