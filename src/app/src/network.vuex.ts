@@ -1,4 +1,5 @@
 import { VuexModule, mutation, action, getter, Module } from "vuex-class-component";
+import  vue  from 'vue';
 import { Component } from './models/Network/Component';
 import { _state } from 'vuex-class-component/dist/symbols';
 import { Point } from './models/Network/Point';
@@ -15,19 +16,29 @@ interface AddNewLinkRequest {
     Link: Link
 }
 
+
+export function FindComponent(rootComponent: Component, componentId: string): Component | undefined {
+    if (rootComponent.Id === componentId)
+        return rootComponent;
+
+    return rootComponent.SubComponents.find(elm => FindComponent(elm, componentId) !== undefined);
+}
+
+
 @Module({ namespacedPath: "network/" })
 export class NetworkStore extends VuexModule {
 
-    private component?: Component;
-    private selectedComponentId? : string;
+    private component: Component;
+    private selectedComponentId: string;
 
     constructor() {
         super();
         this.component = new DataLoader().LoadDummyData();
+        this.selectedComponentId = this.component.Id;
     }
 
     get SelectedComponent(): Component | undefined {
-        return this.FindComponent(this.selectedComponentId);
+        return FindComponent(this.component, this.selectedComponentId);
     }
 
     @mutation LoadComponent(newRootComponent: Component) {
@@ -36,46 +47,29 @@ export class NetworkStore extends VuexModule {
     }
 
     @mutation SelectComponent(selectedComponentId: string) {
-        if (this.FindComponent(selectedComponentId)) {
+        if (FindComponent(this.component, selectedComponentId)) {
             this.selectedComponentId = selectedComponentId;
         }
     }
 
     @mutation ComponentPositionChanged({ ComponentId, Position }: ComponentPositionChangedRequest) {
-        let component = this.FindComponent(ComponentId);
+        let component = FindComponent(this.component, ComponentId);
         if (!!component) {
             component.Position = Position;
         }
     }
 
     @mutation AddNewComponent(newComponent: Component) {
-        let selectedComponent = this.SelectedComponent;
-        if (!!selectedComponent) {
+        let selectedComponent = FindComponent(this.component, this.selectedComponentId);
+        if (!!selectedComponent) {            
             selectedComponent.SubComponents.push(newComponent);
         }
     }
 
     @mutation AddNewLink({ ComponentId, Link }: AddNewLinkRequest) {
-        let component = this.FindComponent(ComponentId);
-        if (!!component) {
-            component.Links.push(Link);
+        let selectedComponent = FindComponent(this.component, ComponentId);
+        if (!!selectedComponent) {           
+            selectedComponent.Links.push(Link);
         }
-    }
-
-    private FindComponent(componentId: string | undefined): Component | undefined {
-        if (!componentId)
-            return undefined;
-
-        if (this.component) {
-            return this.FindComponentReq(this.component, componentId);
-        }
-        return undefined;
-    }
-
-    private FindComponentReq(rootComponent: Component, componentId: string): Component | undefined {
-        if (rootComponent.Id === componentId)
-            return rootComponent;
-
-        return rootComponent.SubComponents.find(elm => this.FindComponentReq(elm, componentId) !== undefined);
     }
 }

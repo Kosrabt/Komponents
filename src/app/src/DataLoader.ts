@@ -26,6 +26,9 @@ export class DataLoader
     k2.SubComponents.push(k2_1);
     k2.SubComponents.push(k2_2);
 
+    var link2 = new Link("newLink","This is a link","k2_2");
+    k2_1.Links.push(link2);
+
     var newComponent = new Component("root", "", "Root");
     newComponent.Position = new Point(0, 0);
     newComponent.SubComponents.push(k1, k2);

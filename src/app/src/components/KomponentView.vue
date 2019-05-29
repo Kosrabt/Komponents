@@ -36,8 +36,8 @@ import SidebarButton from "@/components/Sidebar/SidebarButton.vue";
 import { Component } from "@/models/Network/Component";
 import { Link } from "@/models/Network/Link";
 import { Point } from "@/models/Network/Point";
-import { State, Getter, Action, Mutation, namespace } from "vuex-class";
-import { ComponentOptions } from 'vue';
+import { ComponentOptions } from "vue";
+import { vxm } from "@/store";
 
 const Actions: any = {
   Move: "Move",
@@ -54,19 +54,12 @@ const Actions: any = {
   }
 })
 export default class ComponentView extends Vue {
- 
-
   action: string = Actions.Move;
   selection: any = {
     selectedComponent: undefined
   };
 
-  @Getter SelectedComponent;
-  @Action LoadData;
-  @Mutation ComponentPositionChanged;
-  @Mutation AddNewComponent;
-  @Mutation AddNewLinkToComponent;
-  @Mutation SelectComponent;
+
 
   private idIndex: number = 0;
   constructor() {
@@ -75,13 +68,17 @@ export default class ComponentView extends Vue {
 
   protected created() {
     window.addEventListener("keyup", this.onKeyPressed);
-    this.LoadData();
+  }
+
+  get SelectedComponent()
+  {
+    return vxm.network.SelectedComponent;
   }
 
   protected onComponentChanged(component: Component) {
-    this.ComponentPositionChanged({
-      id: component.Id,
-      position: component.Position
+    vxm.network.ComponentPositionChanged({
+      ComponentId: component.Id,
+      Position: component.Position
     });
   }
 
@@ -99,9 +96,8 @@ export default class ComponentView extends Vue {
     this.HandleAddNewComponent(position);
   }
 
-  protected onDoubleClick(componentId: string)
-  {
-    this.SelectComponent(componentId);
+  protected onDoubleClick(componentId: string) {
+    vxm.network.SelectComponent(componentId);
   }
 
   protected onKeyPressed(event: any): void {
@@ -162,21 +158,24 @@ export default class ComponentView extends Vue {
   protected AddLink(from: Component, to: Component) {
     var id = from.Id + "-" + to.Id;
     var newLink = new Link(id, "Link_" + id, to.Id);
-    this.AddNewLinkToComponent({id: from.Id, link: newLink});  
+    vxm.network.AddNewLink({ ComponentId: from.Id, Link: newLink });
   }
 
-  private HandleAddNewComponent(position: any)
-  {
+  private HandleAddNewComponent(position: any) {
     if (position && this.action == Actions.AddNode) {
       var newComponent = this.GetRandomComponent();
-      newComponent.Position = new Point(position.x, position.y);
-      this.AddNewComponent(newComponent);
-      this.ResetAction();
+      if (!!newComponent) {
+        newComponent.Position = new Point(position.x, position.y);
+        vxm.network.AddNewComponent(newComponent);
+        this.ResetAction();
+      }
     }
   }
 
   private GetComponentById(id: string): Component | undefined {
-    return this.SelectedComponent.SubComponents.find(c => c.Id == id);
+    if (!vxm.network.SelectedComponent) return undefined;
+
+    return vxm.network.SelectedComponent.SubComponents.find(c => c.Id == id);
   }
 
   get fabConfig(): any {
@@ -193,9 +192,15 @@ export default class ComponentView extends Vue {
     };
   }
 
-  private GetRandomComponent(): Component {
+  private GetRandomComponent(): Component | undefined {
+    if (!vxm.network.SelectedComponent) return undefined;
+
     var newId = (this.idIndex++).toString();
-    return new Component(newId, this.SelectedComponent.Id, "Name" + newId);
+    return new Component(
+      newId,
+      vxm.network.SelectedComponent.Id,
+      "Name" + newId
+    );
   }
 }
 </script>
