@@ -1,13 +1,11 @@
-import { Component } from "./Component";
-
 export class Link {
 
     public Id: string;
     public Name : string;
     
-    public To: Component;    
+    public To: string;    
 
-    constructor (id: string, name: string, to:Component)
+    constructor (id: string, name: string, to:string)
     {
         this.Id = id;
         this.Name = name;

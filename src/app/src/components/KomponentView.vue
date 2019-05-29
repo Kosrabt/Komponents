@@ -161,7 +161,7 @@ export default class ComponentView extends Vue {
 
   protected AddLink(from: Component, to: Component) {
     var id = from.Id + "-" + to.Id;
-    var newLink = new Link(id, "Link_" + id, to);
+    var newLink = new Link(id, "Link_" + id, to.Id);
     from.Links.push(newLink);
   }
 

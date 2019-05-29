@@ -121,7 +121,7 @@ export default {
             id: link.Id,
             name: link.Name,
             from: component.Id,
-            to: link.To.Id
+            to: link.To
           };
           edges.push(edge);
         });
