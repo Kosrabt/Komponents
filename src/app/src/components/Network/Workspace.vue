@@ -7,7 +7,7 @@
       :edges="network.edges"
       :options="network.options"
       @click="onClick"
-      @double-click="networkEvent('doubleClick')"
+      @double-click="onDoubleClick"
       @oncontext="networkEvent('oncontext')"
       @hold="networkEvent('hold')"
       @release="networkEvent('release')"
@@ -60,7 +60,7 @@ export default {
     currentComponent: {}
   },
   computed: {
-    network() {     
+    network() {
       return this.computeNetwork();
     }
   },
@@ -89,6 +89,11 @@ export default {
     onClick(event) {
       const point = event.pointer.canvas;
       this.$emit("click", point);
+    },
+    onDoubleClick(event) {
+      if (event && event.nodes && event.nodes.length > 0) {
+        this.$emit("doubleClick", event.nodes[0]);
+      }
     },
     findComponentById(nodeId) {
       return this.currentComponent.SubComponents.find(

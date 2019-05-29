@@ -13,6 +13,7 @@
           @componentChanged="onComponentChanged"
           @componentSelected="onComponentSelected"
           @click="onClick"
+          @doubleClick="onDoubleClick"
         ></Workspace>
       </div>
     </div>
@@ -65,6 +66,7 @@ export default class ComponentView extends Vue {
   @Mutation ComponentPositionChanged;
   @Mutation AddNewComponent;
   @Mutation AddNewLinkToComponent;
+  @Mutation SelectComponent;
 
   private idIndex: number = 0;
   constructor() {
@@ -95,6 +97,11 @@ export default class ComponentView extends Vue {
 
   protected onClick(position: any) {
     this.HandleAddNewComponent(position);
+  }
+
+  protected onDoubleClick(componentId: string)
+  {
+    this.SelectComponent(componentId);
   }
 
   protected onKeyPressed(event: any): void {

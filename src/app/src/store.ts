@@ -12,8 +12,8 @@ export default new Vuex.Store<RootStateModel>({
   getters:
   {
     SelectedComponent: state => 
-    {      
-      if (state.Component && state.SelectedComponentId)
+    {       
+      if (!!state.Component && !!state.SelectedComponentId)
       {
        return FindChild(state.Component, state.SelectedComponentId)
       }
@@ -24,15 +24,22 @@ export default new Vuex.Store<RootStateModel>({
       state.Component = rootComponent;
       state.SelectedComponentId = rootComponent.Id;
     },
-    SelectComponent(state, selectedComponent) {
-      state.SelectedComponentId = selectedComponent.Id;
+    SelectComponent(state, selectedId) {      
+      if (!!state.Component)
+      {
+        let target = FindChild(state.Component, selectedId);
+        if (!!target)
+        {          
+          state.SelectedComponentId = target.Id;
+        }
+      }
     },
     ComponentPositionChanged(state, payload)
     {
-      if (state.Component)
+      if (!!state.Component)
       {
         let target = FindChild(state.Component, payload.id);
-        if (target)
+        if (!!target)
         {          
           target.Position = payload.position;
         }
@@ -40,10 +47,10 @@ export default new Vuex.Store<RootStateModel>({
     },
     AddNewComponent(state, component)
     {     
-      if (state.Component && state.SelectedComponentId)
+      if (!!state.Component && !!state.SelectedComponentId)
       {
         var target = FindChild(state.Component, state.SelectedComponentId);
-        if (target)
+        if (!!target)
         {
           target.SubComponents.push(component);
         }
@@ -51,11 +58,11 @@ export default new Vuex.Store<RootStateModel>({
     },
     AddNewLinkToComponent(state, payload)
     {
-      if (state.Component)
-      {
+      if (!!state.Component)
+      {        
         let target = FindChild(state.Component, payload.id);
-        if (target)
-        {          
+        if (!!target)
+        {
           target.Links.push(payload.link);
         }
       }
