@@ -1,22 +1,25 @@
 <template>
   <div class="Component-view">
     <Sidebar>
-      <SidebarButton>Component 1</SidebarButton>
-      <SidebarButton>Component 2</SidebarButton>
+      <SidebarButton  v-for="component in AllParent" :key="component.Id" @click="onSelectComponent(component.Id)">{{component.Name}}</SidebarButton>     
     </Sidebar>
     <div class="workspace-wrapper">
-      <div class="messages">{{debugMessages}}</div>
       <div class="workspace">
         <Workspace
           ref="workspace"
-          :currentComponent="SelectedComponent"
+          :currentComponent="CalculatedComponent"
           @componentChanged="onComponentChanged"
           @componentSelected="onComponentSelected"
           @click="onClick"
           @doubleClick="onDoubleClick"
         ></Workspace>
       </div>
+      <div class="messages">{{debugMessages}}</div>
+      <div class="button back" v-if="IsNotRootComponent" @click="onBackButtonClicked">
+        <i class="material-icons">arrow_back</i>
+      </div>
     </div>
+
     <fab
       :position="fabConfig.position"
       :bg-color="fabConfig.bgColor"
@@ -59,8 +62,6 @@ export default class ComponentView extends Vue {
     selectedComponent: undefined
   };
 
-
-
   private idIndex: number = 0;
   constructor() {
     super();
@@ -70,9 +71,19 @@ export default class ComponentView extends Vue {
     window.addEventListener("keyup", this.onKeyPressed);
   }
 
-  get SelectedComponent()
+  get CalculatedComponent(): Component | undefined {
+    return vxm.network.CalculatedComponent;
+  }
+
+  get AllParent(): Component[]
   {
-    return vxm.network.SelectedComponent;
+    return vxm.network.AllParentToSelected;
+  }
+
+  get IsNotRootComponent(): boolean {
+    if (!vxm.network.CalculatedComponent) return false;
+
+    return vxm.network.CalculatedComponent.Id != vxm.network.Component.Id;
   }
 
   protected onComponentChanged(component: Component) {
@@ -115,8 +126,27 @@ export default class ComponentView extends Vue {
         this.action = Actions.AddNode;
         break;
 
+      case "Backspace":
+        this.StepBackToParentComponent();
+        break;
+
       default:
         break;
+    }
+  }
+
+  protected onBackButtonClicked() {
+    this.StepBackToParentComponent();
+  }
+
+  protected onSelectComponent(componentId : string)
+  {
+    vxm.network.SelectComponent(componentId);
+  }
+
+  protected StepBackToParentComponent() {
+    if (this.IsNotRootComponent) {
+      vxm.network.SelectParentComponent();
     }
   }
 
@@ -173,9 +203,9 @@ export default class ComponentView extends Vue {
   }
 
   private GetComponentById(id: string): Component | undefined {
-    if (!vxm.network.SelectedComponent) return undefined;
+    if (!vxm.network.CalculatedComponent) return undefined;
 
-    return vxm.network.SelectedComponent.SubComponents.find(c => c.Id == id);
+    return vxm.network.CalculatedComponent.SubComponents.find(c => c.Id == id);
   }
 
   get fabConfig(): any {
@@ -193,12 +223,12 @@ export default class ComponentView extends Vue {
   }
 
   private GetRandomComponent(): Component | undefined {
-    if (!vxm.network.SelectedComponent) return undefined;
+    if (!vxm.network.CalculatedComponent) return undefined;
 
     var newId = (this.idIndex++).toString();
     return new Component(
       newId,
-      vxm.network.SelectedComponent.Id,
+      vxm.network.CalculatedComponent.Id,
       "Name" + newId
     );
   }
@@ -220,6 +250,17 @@ export default class ComponentView extends Vue {
   .workspace {
     width: 100%;
     height: 100%;
+  }
+
+  .button {
+    position: absolute;
+    cursor: pointer;
+    padding: 10px;
+
+    &.back {
+      left: 22px;
+      top: 22px;
+    }
   }
 
   .action-button {
