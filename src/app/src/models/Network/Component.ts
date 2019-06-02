@@ -17,4 +17,19 @@ export class Component {
         this.ParentId = parentId;
         this.Name = name;
     }
+
+    public AddChild(child: Component): void {
+        this.SubComponents.push(child);
+    }
+
+    public Move(x: number, y: number): Component
+    {
+        this.Position = new Point(x, y);
+        return this;
+    }
+
+    public AddLink(link: Link): void
+    {
+        this.Links.push(link);
+    }
 }

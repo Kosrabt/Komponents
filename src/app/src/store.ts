@@ -1,14 +1,15 @@
 import Vue from 'vue';
 import Vuex from 'vuex';
 import VuexPersistence from 'vuex-persist';
-import { NetworkStore } from './network.vuex';
+import { NetworkStore, StoredMutations } from './network.vuex';
 
 Vue.use(Vuex);
 
 const vuexLocal = new VuexPersistence({
   storage: window.localStorage,
   key: 'Komponent-network',
-  modules: ['network']
+  modules: ['network'],
+  filter : (mutation) => StoredMutations.indexOf(mutation.type) > -1,
 })
 
 export const store = new Vuex.Store({

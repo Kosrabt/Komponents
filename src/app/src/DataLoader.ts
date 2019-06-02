@@ -11,27 +11,31 @@ export class DataLoader
 
     
   private GetBaseData(): Component {
-    var k1 = new Component("k1", "root", "Name1");
-    k1.Position = new Point(100, 0);
+    var root = new Component("root", "", "root");
 
-    var k2 = new Component("k2", "root", "Name2");
-    k2.Position = new Point(-100, 0);
+    var customer = new Component("TCM", "root", "Techsson.Customer").Move(-100,0);
+    root.AddChild(customer);
 
-    var link = new Link("k1-k2", "Link", "k2");
-    k1.Links.push(link);
+    var jrc = new Component("JRC", "root", "Techsson.Jrc").Move(100,0);
+    root.AddChild(jrc);
+
+    var GovernmentMustAllowLink = new Link("TCM-JRC-Use", "GovernmentMustAllow", "JRC");
+    customer.Links.push(GovernmentMustAllowLink);
   
-    var k2_1 = new Component("k2_1", "k2", "k2_sub_1");
-    var k2_2 = new Component("k2_2", "k2", "k2_sub_2");
+    var Jrc_Compliance_Api = new Component("JRC_Compliance", "JRC", "Techsson.Jrc.Compliance").Move(-100,0);
+    var Jrc_UnitedKingdom_Api = new Component("JRC_UKGC", "JRC", "Techsson.Jrc.UnitedKingdom").Move(100, -100);
+    var Jrc_Sweden_Api = new Component("JRC_SGA", "JRC", "Techsson.Jrc.Sweden").Move(100, 0);
+    var Jrc_Denmark_Api = new Component("JRC_DGA", "JRC", "Techsson.Jrc.Denmark").Move(100, 100);
 
-    k2.SubComponents.push(k2_1);
-    k2.SubComponents.push(k2_2);
+    Jrc_Compliance_Api.AddLink(new Link("JRC_Compliance_JRC_UKGC_Check", "Check",Jrc_UnitedKingdom_Api.Id));
+    Jrc_Compliance_Api.AddLink(new Link("JRC_Compliance_JRC_SGA_Check", "Check",Jrc_Sweden_Api.Id));
+    Jrc_Compliance_Api.AddLink(new Link("JRC_Compliance_JRC_DGA_Check", "Check",Jrc_Denmark_Api.Id));
 
-    var link2 = new Link("newLink","This is a link","k2_2");
-    k2_1.Links.push(link2);
-
-    var newComponent = new Component("root", "", "Root");
-    newComponent.Position = new Point(0, 0);
-    newComponent.SubComponents.push(k1, k2);
-    return newComponent;
+    jrc.AddChild(Jrc_Compliance_Api);
+    jrc.AddChild(Jrc_UnitedKingdom_Api);
+    jrc.AddChild(Jrc_Sweden_Api);
+    jrc.AddChild(Jrc_Denmark_Api);
+    
+    return root;
   }
 }

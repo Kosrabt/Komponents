@@ -39,6 +39,8 @@ export function FindAllParent(rootComponent: Component, targetComponentId: strin
     return [];
 }
 
+export const StoredMutations: string[] = ['network/LoadComponent','network/SelectComponent','network/ComponentPositionChanged','network/AddNewComponent','network/AddNewLink'];
+
 @Module({ namespacedPath: "network/" })
 export class NetworkStore extends VuexModule {
 

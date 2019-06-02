@@ -2,12 +2,15 @@
   <div class="title-bar">
     <img alt="Komponents" src="../assets/logo.png">
     <FileSelect ref="FileSelect" @fileLoaded="fileLoaded"/>
+    <button @click="ClearLocalStorage">Clear local storage</button>
   </div>
 </template>
 
 <script lang="ts">
 import { Component, Prop, Vue } from "vue-property-decorator";
 import FileSelect from "./FileSelect.vue";
+import {vxm} from "@/store";
+import { DataLoader } from '../DataLoader';
 
 @Component({
   components: {
@@ -16,6 +19,11 @@ import FileSelect from "./FileSelect.vue";
 })
 export default class TitleBar extends Vue {
   fileLoaded(event: Event) {}
+
+  ClearLocalStorage()
+  {
+    vxm.network.LoadComponent(new DataLoader().LoadDummyData());
+  }
 }
 </script>
 
