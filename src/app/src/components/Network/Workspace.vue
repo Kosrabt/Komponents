@@ -64,6 +64,14 @@ export default {
       return this.computeNetwork();
     }
   },
+  mounted()
+  {
+    var currentComponent = this;
+    this.$bus.$on("unselect_components",(params) =>
+    {       
+      currentComponent.unselectAll();
+    });
+  },
   methods: {
     networkEvent(eventName) {},
     onDragEnd(event) {

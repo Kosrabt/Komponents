@@ -19,20 +19,12 @@
         <i class="material-icons">arrow_back</i>
       </div>
     </div>
-
-    <fab
-      :position="fabConfig.position"
-      :bg-color="fabConfig.bgColor"
-      :actions="fabConfig.fabActions"
-      @addComponent="addNewComponent"
-    ></fab>
   </div>
 </template>
 
 <script lang="ts">
 import { Component as VueComponent, Prop, Vue } from "vue-property-decorator";
 
-import fab from "vue-fab";
 import Workspace from "../components/Network/Workspace.vue";
 import Sidebar from "@/components/Sidebar/Sidebar.vue";
 import SidebarButton from "@/components/Sidebar/SidebarButton.vue";
@@ -41,6 +33,7 @@ import { Link } from "@/models/Network/Link";
 import { Point } from "@/models/Network/Point";
 import { ComponentOptions } from "vue";
 import { vxm } from "@/store";
+
 
 const Actions: any = {
   Move: "Move",
@@ -53,7 +46,6 @@ const Actions: any = {
     Workspace,
     SidebarButton,
     Sidebar,
-    fab
   }
 })
 export default class ComponentView extends Vue {
@@ -109,6 +101,7 @@ export default class ComponentView extends Vue {
 
   protected onDoubleClick(componentId: string) {
     vxm.network.SelectComponent(componentId);
+    this.UnselectAll();
   }
 
   protected onKeyPressed(event: any): void {
@@ -157,14 +150,13 @@ export default class ComponentView extends Vue {
 
   protected UnselectAll() {
     this.selection.selectedComponent = undefined;
-    this.$refs.workspace.unselectAll();
+    this.$bus.$emit("unselect_components");
   }
 
   protected get debugMessages(): string {
     var message = "CurrentAction: " + this.action;
     if (this.selection.selectedComponent) {
-      message +=
-        " Selected component: " + this.selection.selectedComponent.Name;
+      message += " Selected component: " + this.selection.selectedComponent.Name;
     }
     return message;
   }
@@ -206,20 +198,6 @@ export default class ComponentView extends Vue {
     if (!vxm.network.CalculatedComponent) return undefined;
 
     return vxm.network.CalculatedComponent.SubComponents.find(c => c.Id == id);
-  }
-
-  get fabConfig(): any {
-    return {
-      position: "absolute",
-      bgColor: "#45A29E",
-      fabActions: [
-        {
-          name: "addComponent",
-          icon: "plus_one",
-          tooltip: "Add new Component"
-        }
-      ]
-    };
   }
 
   private GetRandomComponent(): Component | undefined {

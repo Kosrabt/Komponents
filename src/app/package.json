@@ -12,7 +12,6 @@
     "vue": "^2.6.10",
     "vue-bus-ts": "^1.0.8",
     "vue-class-component": "^7.0.2",
-    "vue-fab": "^2.3.1",
     "vue-property-decorator": "^8.1.0",
     "vue-router": "^3.0.3",
     "vue2vis": "0.0.16",
