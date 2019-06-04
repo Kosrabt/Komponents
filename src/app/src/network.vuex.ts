@@ -16,7 +16,6 @@ interface AddNewLinkRequest {
     NewLink: Link
 }
 
-
 export function FindComponent(component: Component, lookupId: string): Component | undefined {
     if (component.Id === lookupId)
         return component;
@@ -24,14 +23,20 @@ export function FindComponent(component: Component, lookupId: string): Component
     return component.SubComponents.map(elm => FindComponent(elm, lookupId)).find(elm => elm != undefined);
 }
 
-export function FindAllParent(rootComponent: Component, targetComponentId: string): Component[]
-{
+export function FindComponentSafe(component: Component, lookupId: string): Component {
+    let found = FindComponent(component, lookupId);
+    if (!!found)
+        return found;
+
+    throw "Component not found";
+}
+
+export function FindAllParent(rootComponent: Component, targetComponentId: string): Component[] {
     if (rootComponent.Id == targetComponentId)
-    return [rootComponent];
+        return [rootComponent];
 
     var targetComponent = FindComponent(rootComponent, targetComponentId);
-    if (!!targetComponent)
-    {
+    if (!!targetComponent) {
         var allParentComponents = FindAllParent(rootComponent, targetComponent.ParentId);
         return [...allParentComponents, targetComponent];
     }
@@ -39,7 +44,13 @@ export function FindAllParent(rootComponent: Component, targetComponentId: strin
     return [];
 }
 
-export const StoredMutations: string[] = ['network/LoadComponent','network/SelectComponent','network/ComponentPositionChanged','network/AddNewComponent','network/AddNewLink'];
+export const StoredMutations: string[] = [
+    'network/LoadComponent',
+    'network/SelectComponent',
+    'network/ComponentPositionChanged',
+    'network/AddNewComponent',
+    'network/AddNewLink',
+    'network/DeleteComponent'];
 
 @Module({ namespacedPath: "network/" })
 export class NetworkStore extends VuexModule {
@@ -48,19 +59,17 @@ export class NetworkStore extends VuexModule {
     private selectedComponentId: string;
 
     constructor() {
-        super();
-        this.Component = new DataLoader().LoadDummyData();
+        super();       
+        this.Component = new Component("root","root","Root");      
         this.selectedComponentId = this.Component.Id;
     }
 
     get CalculatedComponent(): Component | undefined {
-        return FindComponent(this.Component, this.selectedComponentId);
+        return FindComponentSafe(this.Component, this.selectedComponentId);
     }
 
-    get AllParentToSelected(): Component[]
-    {
-        if (!this.selectedComponentId)
-        {
+    get AllParentToSelected(): Component[] {
+        if (!this.selectedComponentId) {
             return [];
         }
         return FindAllParent(this.Component, this.selectedComponentId);
@@ -78,24 +87,32 @@ export class NetworkStore extends VuexModule {
     }
 
     @mutation ComponentPositionChanged({ ComponentId, Position }: ComponentPositionChangedRequest) {
-        let component = FindComponent(this.Component, ComponentId);
-        if (!!component) {
-            component.Position = Position;
-        }
+        let component = FindComponentSafe(this.Component, ComponentId);
+
+        component.Position = Position;
+
     }
 
     @mutation AddNewComponent(newComponent: Component) {
-        let selectedComponent = FindComponent(this.Component, this.selectedComponentId);
-        if (!!selectedComponent) {
-            selectedComponent.SubComponents.push(newComponent);
-        }
+        let selectedComponent = FindComponentSafe(this.Component, this.selectedComponentId);
+
+        selectedComponent.SubComponents.push(newComponent);
+
     }
 
     @mutation AddNewLink({ ComponentId, NewLink }: AddNewLinkRequest) {
-        let selectedComponent = FindComponent(this.Component, ComponentId);
-        if (!!selectedComponent) {
-            selectedComponent.Links.push(NewLink);
-        }
+        let selectedComponent = FindComponentSafe(this.Component, ComponentId);
+
+        selectedComponent.Links.push(NewLink);
+
+    }
+
+    @mutation DeleteComponent(componentId: string) {
+        let component = FindComponentSafe(this.Component, componentId);
+        let parent = FindComponentSafe(this.Component, component.ParentId);
+
+        //TODO handle all links which is pointed here
+        parent.SubComponents = parent.SubComponents.filter(c => c.Id != componentId);
     }
 
     @action async SelectParentComponent() {

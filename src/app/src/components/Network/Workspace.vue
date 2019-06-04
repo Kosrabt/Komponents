@@ -8,42 +8,9 @@
       :options="network.options"
       @click="onClick"
       @double-click="onDoubleClick"
-      @oncontext="networkEvent('oncontext')"
-      @hold="networkEvent('hold')"
-      @release="networkEvent('release')"
-      @select="networkEvent('select')"
-      @select-node="onSelectionChanged"
-      @select-edge="networkEvent('selectEdge')"
-      @deselect-node="onSelectionChanged"
-      @deselect-edge="networkEvent('deselectEdge')"
-      @drag-start="networkEvent('dragStart')"
-      @dragging="networkEvent('dragging')"
       @drag-end="onDragEnd"
-      @hover-node="networkEvent('hoverNode')"
-      @blur-node="networkEvent('blurNode')"
-      @hover-edge="networkEvent('hoverEdge')"
-      @blur-edge="networkEvent('blurEdge')"
       @zoom="networkEvent('zoom')"
-      @show-popup="networkEvent('showPopup')"
-      @hide-popup="networkEvent('hidePopup')"
-      @start-stabilizing="networkEvent('startStabilizing')"
-      @stabilization-progress="networkEvent('stabilizationProgress')"
-      @stabilization-iterations-done="networkEvent('stabilizationIterationsDone')"
       @stabilized="networkEvent('stabilized')"
-      @resize="networkEvent('resize')"
-      @init-redraw="networkEvent('initRedraw')"
-      @before-drawing="networkEvent('beforeDrawing')"
-      @after-drawing="networkEvent('afterDrawing')"
-      @animation-finished="networkEvent('animationFinished')"
-      @config-change="networkEvent('configChange')"
-      @nodes-mounted="networkEvent('nodes-mounted')"
-      @nodes-add="networkEvent('nodes-add')"
-      @nodes-update="networkEvent('nodes-update')"
-      @nodes-remove="networkEvent('nodes-remove')"
-      @edges-mounted="networkEvent('edges-mounted')"
-      @edges-add="networkEvent('edges-add')"
-      @edges-update="networkEvent('edges-update')"
-      @edges-remove="networkEvent('edges-remove')"
     ></network>
   </div>
 </template>
@@ -64,63 +31,47 @@ export default {
       return this.computeNetwork();
     }
   },
-  mounted()
-  {
+  mounted() {
     var currentComponent = this;
-    this.$bus.$on("unselect_components",(params) =>
-    {       
+    this.$bus.$on("unselectcomponents", params => {
       currentComponent.unselectAll();
     });
   },
   methods: {
     networkEvent(eventName) {},
+
     onDragEnd(event) {
       const nodes = event.nodes;
       const positions = this.$refs.network.getPositions(nodes);
       for (let [key, value] of Object.entries(positions)) {
-        let component = this.findComponentById(key);
-        if (component) {
-          component.Position.X = value.x;
-          component.Position.Y = value.y;
-          this.notifyChange(component);
-        }
+        this.$emit("nodepositionchanged", { id: key, x: value.x, y: value.y });
       }
     },
-    onSelectionChanged(event) {
-      let component = undefined;
-      if (event.nodes.length > 0) {
-        var nodeId = event.nodes[0];
-        component = this.findComponentById(nodeId);
-      }
-      this.notifyNodeSelected(component);
-    },
-    onClick(event) {
-      const point = event.pointer.canvas;
-      this.$emit("click", point);
-    },
+    
     onDoubleClick(event) {
       if (event && event.nodes && event.nodes.length > 0) {
         this.$emit("doubleClick", event.nodes[0]);
       }
     },
-    findComponentById(nodeId) {
-      return this.currentComponent.SubComponents.find(
-        element => element.Id === nodeId
-      );
+
+    onClick(event) {    
+      const point = event.pointer.canvas;
+      this.$emit("click",
+      {
+        position: {X:event.pointer.canvas.x, Y:event.pointer.canvas.y},
+        nodes: event.nodes,
+        edges: event.edges
+      });
     },
-    notifyChange(component) {
-      this.$emit("componentChanged", component);
-    },
-    notifyNodeSelected(component) {
-      this.$emit("componentSelected", component);
-    },
+
     unselectAll() {
       this.$refs.network.unselectAll();
     },
+
     computeNetwork() {
       var nodes = [];
       var edges = [];
-
+     
       this.currentComponent.SubComponents.forEach(component => {
         var node = {
           id: component.Id,

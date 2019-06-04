@@ -1,17 +1,20 @@
 <template>
   <div class="Component-view">
     <Sidebar>
-      <SidebarButton  v-for="component in AllParent" :key="component.Id" @click="onSelectComponent(component.Id)">{{component.Name}}</SidebarButton>     
+      <SidebarButton
+        v-for="component in AllParent"
+        :key="component.Id"
+        @click="onSelectComponent(component.Id)"
+      >{{component.Name}}</SidebarButton>
     </Sidebar>
     <div class="workspace-wrapper">
       <div class="workspace">
         <Workspace
           ref="workspace"
           :currentComponent="CalculatedComponent"
-          @componentChanged="onComponentChanged"
-          @componentSelected="onComponentSelected"
           @click="onClick"
           @doubleClick="onDoubleClick"
+          @nodepositionchanged="onNodePositionChanged"
         ></Workspace>
       </div>
       <div class="messages">{{debugMessages}}</div>
@@ -34,25 +37,35 @@ import { Point } from "@/models/Network/Point";
 import { ComponentOptions } from "vue";
 import { vxm } from "@/store";
 
-
 const Actions: any = {
   Move: "Move",
   AddEdge: "Add Edge",
   AddNode: "Add Node"
 };
 
+interface nodepositionchangedRequest {
+  id: string;
+  x: number;
+  y: number;
+}
+
+interface clickRequest {
+  position: Point;
+  nodes: string[];
+  edges: string[];
+}
+
 @VueComponent({
   components: {
     Workspace,
     SidebarButton,
-    Sidebar,
+    Sidebar
   }
 })
 export default class ComponentView extends Vue {
-  action: string = Actions.Move;
-  selection: any = {
-    selectedComponent: undefined
-  };
+  private action: string = Actions.Move;
+  private selectedComponents: string[] = [];
+  private selectedEdges: string[] = [];
 
   private idIndex: number = 0;
   constructor() {
@@ -67,8 +80,7 @@ export default class ComponentView extends Vue {
     return vxm.network.CalculatedComponent;
   }
 
-  get AllParent(): Component[]
-  {
+  get AllParent(): Component[] {
     return vxm.network.AllParentToSelected;
   }
 
@@ -78,33 +90,47 @@ export default class ComponentView extends Vue {
     return vxm.network.CalculatedComponent.Id != vxm.network.Component.Id;
   }
 
-  protected onComponentChanged(component: Component) {
-    vxm.network.ComponentPositionChanged({
-      ComponentId: component.Id,
-      Position: component.Position
-    });
-  }
+  //Events
+  private onClick(event: clickRequest) {
+    if (!event) return;
 
-  protected onComponentSelected(Component: Component) {
-    if (!Component) {
-      this.UnselectAll();
-      return;
+    switch (this.action) {
+      case Actions.AddNode:
+        this.AddComponent(new Point(event.position.X, event.position.Y));
+        this.ResetAction();
+        break;
+
+      case Actions.AddEdge:
+        if (event.nodes.length > 0 && this.selectedComponents.length > 0) {
+          this.AddLink(this.selectedComponents[0], event.nodes[0]);
+          this.ResetAction();
+          this.UnselectAll();
+          break;
+        }
+
+      default:
+        this.selectedComponents = event.nodes;
+        this.selectedEdges = event.edges;
+        break;
     }
-    var newComponent = this.GetComponentById(Component.Id);
-    this.HandleSelectActions(newComponent);
-    this.selection.selectedComponent = newComponent;
   }
 
-  protected onClick(position: any) {
-    this.HandleAddNewComponent(position);
-  }
-
-  protected onDoubleClick(componentId: string) {
+  private onDoubleClick(componentId: string) {
     vxm.network.SelectComponent(componentId);
     this.UnselectAll();
   }
 
-  protected onKeyPressed(event: any): void {
+  private onNodePositionChanged(request: nodepositionchangedRequest) {
+    let component = this.GetComponentById(request.id);
+    if (component) {
+      vxm.network.ComponentPositionChanged({
+        ComponentId: component.Id,
+        Position: new Point(request.x, request.y)
+      });
+    }
+  }
+
+  private onKeyPressed(event: any): void {
     var keyCode = event.code;
     switch (keyCode) {
       case "Escape":
@@ -123,6 +149,10 @@ export default class ComponentView extends Vue {
         this.StepBackToParentComponent();
         break;
 
+      case "Delete":
+        this.DeleteSelected();
+        break;
+
       default:
         break;
     }
@@ -132,66 +162,50 @@ export default class ComponentView extends Vue {
     this.StepBackToParentComponent();
   }
 
-  protected onSelectComponent(componentId : string)
-  {
-    vxm.network.SelectComponent(componentId);
-  }
+  //Methods
 
-  protected StepBackToParentComponent() {
+  private StepBackToParentComponent() {
     if (this.IsNotRootComponent) {
       vxm.network.SelectParentComponent();
     }
   }
 
-  protected ResetAction() {
+  private ResetAction() {
     this.action = Actions.Move;
     this.UnselectAll();
   }
 
-  protected UnselectAll() {
-    this.selection.selectedComponent = undefined;
-    this.$bus.$emit("unselect_components");
+  private UnselectAll() {
+    this.selectedComponents = [];
+    this.selectedEdges = [];
+    this.$bus.$emit("unselectcomponents");
   }
 
-  protected get debugMessages(): string {
+  private get debugMessages(): string {
     var message = "CurrentAction: " + this.action;
-    if (this.selection.selectedComponent) {
-      message += " Selected component: " + this.selection.selectedComponent.Name;
+    if (this.selectedComponents.length > 0) {
+      message += " Selected component: " + this.selectedComponents;
+    }
+    if (this.selectedEdges.length > 0) {
+      message += " Selected edges: " + this.selectedEdges;
     }
     return message;
   }
 
-  //Operations
-  protected addNewComponent(): void {
-    this.action = Actions.AddNode;
+  private AddComponent({ X, Y }: Point) {
+    var component = this.GetRandomComponent().Move(X, Y);
+    vxm.network.AddNewComponent(component);
   }
 
-  protected HandleSelectActions(Component: Component | undefined): void {
-    if (
-      this.action === Actions.AddEdge &&
-      this.selection.selectedComponent &&
-      Component
-    ) {
-      this.AddLink(this.selection.selectedComponent, Component);
-      this.ResetAction();
-    }
+  private AddLink(fromId: string, toId: string) {
+    var id = fromId + "-" + toId;
+    var newLink = new Link(id, "Link_" + id, toId);
+    vxm.network.AddNewLink({ ComponentId: fromId, NewLink: newLink });
   }
 
-  protected AddLink(from: Component, to: Component) {
-    var id = from.Id + "-" + to.Id;
-    var newLink = new Link(id, "Link_" + id, to.Id);
-    vxm.network.AddNewLink({ ComponentId: from.Id, NewLink: newLink });
-  }
-
-  private HandleAddNewComponent(position: any) {
-    if (position && this.action == Actions.AddNode) {
-      var newComponent = this.GetRandomComponent();
-      if (!!newComponent) {
-        newComponent.Position = new Point(position.x, position.y);
-        vxm.network.AddNewComponent(newComponent);
-        this.ResetAction();
-      }
-    }
+  private DeleteSelected() 
+  {
+    vxm.network.DeleteComponent(this.selectedComponents[0]);
   }
 
   private GetComponentById(id: string): Component | undefined {
@@ -200,8 +214,8 @@ export default class ComponentView extends Vue {
     return vxm.network.CalculatedComponent.SubComponents.find(c => c.Id == id);
   }
 
-  private GetRandomComponent(): Component | undefined {
-    if (!vxm.network.CalculatedComponent) return undefined;
+  private GetRandomComponent(): Component {
+    if (!vxm.network.CalculatedComponent) throw "No workspace selected";
 
     var newId = (this.idIndex++).toString();
     return new Component(
